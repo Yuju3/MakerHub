@@ -120,3 +120,34 @@ a:hover {
   margin-bottom: 2rem;
 }
 
+
+/* Dark Mode */
+[data-theme="dark"] {
+  --ut-charcoal: #E2E8F0; /* lighter text for dark mode */
+  --ut-light-gray: #334155; /* darker hover/borders */
+  --ut-white: #1E293B; /* card background */
+  --ut-off-white: #0F172A; /* main body background */
+  --ut-dark-gray: #475569; /* borders */
+  --error-red: #EF4444;
+  --success-green: #22C55E;
+}
+
+[data-theme="dark"] .form-control {
+  background-color: #0F172A;
+  color: #E2E8F0;
+  border-color: #475569;
+}
+
+[data-theme="dark"] .form-control:focus {
+  border-color: var(--ut-burnt-orange);
+}
+
+[data-theme="dark"] .btn-secondary {
+  background-color: #1E293B;
+  color: #E2E8F0;
+  border: 1px solid #475569;
+}
+
+[data-theme="dark"] .btn-secondary:hover {
+  background-color: #334155;
+}

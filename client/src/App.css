@@ -118,3 +118,9 @@
   gap: 2rem;
 }
 
+
+[data-theme="dark"] .footer {
+  background-color: #0F172A; /* darker background for footer in dark mode */
+  color: #94A3B8; /* muted text */
+  border-top: 1px solid #1E293B;
+}
