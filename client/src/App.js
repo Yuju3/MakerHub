@@ -1,10 +1,10 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import Navbar from './components/navbar';
-import MyLoginPage from './pages/myLoginPage';
-import MyRegistrationPage from './pages/myRegistrationPage';
-import ForgotMyPassword from './pages/forgotMyPassword';
-import MyUserPortal from './pages/myUserPortal';
+import Navbar from './components/Navbar';
+import MyLoginPage from './pages/MyLoginPage';
+import MyRegistrationPage from './pages/MyRegistrationPage';
+import ForgotMyPassword from './pages/ForgotMyPassword';
+import MyUserPortal from './pages/MyUserPortal';
 import './App.css';
 
 function App() {

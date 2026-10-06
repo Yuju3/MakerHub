@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import Project from '../components/project';
-import Checkout from '../components/checkout';
+import Project from '../components/Project';
+import Checkout from '../components/Checkout';
 
 const MyUserPortal = () => {
   const [activeProject, setActiveProject] = useState(null);
