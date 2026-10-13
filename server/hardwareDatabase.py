@@ -32,11 +32,43 @@ def queryHardwareSet(client, hwSetName):
 
 
 def updateAvailability(client, hwSetName, newAvailability):
-    pass
+    collection = client[DB_NAME][COLLECTION_NAME]
+
+    if type(newAvailability) is not int or newAvailability < 0:
+        raise ValueError("Availability must be a non-negative integer")
+
+    result = collection.update_one(
+        {
+            "hwName": hwSetName,
+            "capacity": {"$gte": newAvailability}
+        },
+        {"$set": {"availability": newAvailability}}
+    )
+
+    if result.matched_count == 0:
+        raise ValueError("Hardware set not found or availability exceeds capacity")
+
+    return queryHardwareSet(client, hwSetName)
 
 
 def requestSpace(client, hwSetName, amount):
-    pass
+    collection = client[DB_NAME][COLLECTION_NAME]
+
+    if type(amount) is not int or amount <= 0:
+        raise ValueError("Checkout amount must be a positive integer")
+
+    result = collection.update_one(
+        {
+            "hwName": hwSetName,
+            "availability": {"$gte": amount}
+        },
+        {"$inc": {"availability": -amount}}
+    )
+
+    if result.matched_count == 0:
+        raise ValueError("Hardware set not found or insufficient availability")
+
+    return queryHardwareSet(client, hwSetName)
 
 
 def getAllHwNames(client):
