@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Cpu, Server, CheckCircle, XCircle } from 'lucide-react';
+import Collaborators from './Collaborators';
 
-const Checkout = ({ project }) => {
+const Checkout = ({ project, currentUserId }) => {
   // Mock data representing hardware sets
   const [hardwareSets, setHardwareSets] = useState([
     { id: 'HWSet1', name: 'Arduino Kits', capacity: 100, available: 45, checkedOutByProject: 5 },
@@ -28,7 +29,10 @@ const Checkout = ({ project }) => {
     <div className="card">
       <div style={{ borderBottom: '2px solid var(--ut-light-gray)', paddingBottom: '1rem', marginBottom: '1.5rem' }}>
         <h2 style={{ color: 'var(--ut-burnt-orange)' }}>{project.name}</h2>
-        <p style={{ margin: 0 }}>Project ID: {project.projectId}</p>
+        <p style={{ margin: '0 0 1rem' }}>Project ID: {project.projectId}</p>
+        <div style={{ marginTop: '0.75rem' }}>
+          <Collaborators project={project} currentUserId={currentUserId} />
+        </div>
       </div>
 
       <h3>Hardware Resources</h3>
@@ -86,4 +90,3 @@ const Checkout = ({ project }) => {
 };
 
 export default Checkout;
-

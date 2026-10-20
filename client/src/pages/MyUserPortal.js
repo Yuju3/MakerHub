@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Project from '../components/Project';
 import Checkout from '../components/Checkout';
+import JoinProject from '../components/JoinProject';
 
 const MyUserPortal = () => {
   const [activeProject, setActiveProject] = useState(null);
@@ -79,19 +80,20 @@ const MyUserPortal = () => {
           <button className="btn btn-secondary" style={{marginBottom: '1rem'}} onClick={() => setActiveProject(null)}>
             &larr; Back to Projects
           </button>
-          <Checkout project={activeProject} />
+          <Checkout project={activeProject} currentUserId={currentUser?.userId} />
         </div>
       ) : (
         <div className="dashboard-grid">
           {projects.map(proj => (
             <div key={proj.projectId} onClick={() => setActiveProject(proj)} style={{cursor: 'pointer'}}>
-              <Project project={proj} />
+              <Project project={proj} currentUserId={currentUser?.userId} />
             </div>
           ))}
-          <div className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', borderStyle: 'dashed', borderWidth: '2px', borderColor: 'var(--ut-dark-gray)', cursor: 'pointer', background: 'transparent', boxShadow: 'none' }}>
-            <h3 style={{ color: 'var(--ut-charcoal)', opacity: 0.7 }}>Join Existing Project</h3>
-            <p style={{ opacity: 0.6 }}>Enter a project ID to collaborate</p>
-          </div>
+          <JoinProject
+            userId={currentUser?.userId}
+            existingProjectIds={projects.map(proj => proj.projectId)}
+            onJoined={(project) => setProjects(previous => [...previous, project])}
+          />
         </div>
       )}
     </div>
@@ -99,4 +101,3 @@ const MyUserPortal = () => {
 };
 
 export default MyUserPortal;
-

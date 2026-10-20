@@ -1,16 +1,18 @@
 import React from 'react';
 import { Folder } from 'lucide-react';
+import Collaborators from './Collaborators';
 
-const Project = ({ project }) => {
+const Project = ({ project, currentUserId }) => {
   return (
     <div className="card" style={{ transition: 'transform 0.2s', height: '100%' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
         <Folder color="var(--ut-burnt-orange)" size={28} />
-        <h3 style={{ margin: 0 }}>{project.name}</h3>
+        <h3 style={{ margin: 0, minWidth: 0, overflowWrap: 'anywhere' }}>{project.name}</h3>
       </div>
-      <p style={{ color: 'var(--ut-charcoal)', fontSize: '0.9rem', marginBottom: '1rem' }}>
+      <p style={{ color: 'var(--ut-charcoal)', fontSize: '0.9rem', marginBottom: '1rem', overflowWrap: 'anywhere' }}>
         {project.description}
       </p>
+      <Collaborators project={project} currentUserId={currentUserId} />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
         <span style={{ fontSize: '0.8rem', backgroundColor: 'var(--ut-light-gray)', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>
           ID: {project.projectId}
@@ -24,4 +26,3 @@ const Project = ({ project }) => {
 };
 
 export default Project;
-
