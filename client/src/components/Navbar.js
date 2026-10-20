@@ -1,20 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Wrench, Moon, Sun } from 'lucide-react';
+import { Wrench, Moon, Sun, UserCircle } from 'lucide-react';
 
 const Navbar = () => {
   const location = useLocation();
   const isAuthPage = ['/login', '/register', '/forgot-password'].includes(location.pathname);
   
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
+  const [currentUser, setCurrentUser] = useState(() => {
+    const savedUser = localStorage.getItem('currentUser');
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('theme', theme);
   }, [theme]);
 
+  useEffect(() => {
+    const updateUser = () => {
+      const savedUser = localStorage.getItem('currentUser');
+      setCurrentUser(savedUser ? JSON.parse(savedUser) : null);
+    };
+    window.addEventListener('currentUserChanged', updateUser);
+    return () => window.removeEventListener('currentUserChanged', updateUser);
+  }, []);
+
   const toggleTheme = () => {
     setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  };
+
+  const handleSignOut = () => {
+    localStorage.removeItem('currentUser');
+    setCurrentUser(null);
   };
 
   return (
@@ -32,7 +50,13 @@ const Navbar = () => {
         {!isAuthPage && (
           <>
             <Link to="/portal" className="nav-link">My Projects</Link>
-            <Link to="/login" className="btn btn-secondary" style={{ padding: '0.4rem 1rem' }}>Sign Out</Link>
+            {currentUser && (
+              <span className="current-user" title="Current user">
+                <UserCircle size={20} />
+                <span>{currentUser.username}</span>
+              </span>
+            )}
+            <Link to="/login" className="btn btn-secondary" style={{ padding: '0.4rem 1rem' }} onClick={handleSignOut}>Sign Out</Link>
           </>
         )}
       </div>

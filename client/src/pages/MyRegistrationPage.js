@@ -14,15 +14,29 @@ const MyRegistrationPage = () => {
     setFormData({...formData, [e.target.id]: e.target.value});
   };
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
       alert("Passwords do not match");
       return;
     }
-    // API call to /add_user goes here
-    alert("Account created successfully!");
-    navigate('/login');
+    try {
+      const response = await fetch('http://127.0.0.1:5000/add_user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: formData.username,
+          userId: formData.userId,
+          password: formData.password
+        })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Registration failed');
+      alert("Account created successfully!");
+      navigate('/login');
+    } catch (error) {
+      alert(error.message);
+    }
   };
 
   return (

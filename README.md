@@ -81,3 +81,17 @@ This file contains functions for managing users in the database.
 ## Client side
 
 1. Design choices are up to you, but an example directory structure has been provided. 
+
+## Local backend proof of concept
+
+The backend uses `server/database.json` as a simple local database.
+
+```bash
+cd server
+python3 -m pip install -r requirements.txt
+python3 app.py
+```
+
+The initial API supports `POST /add_user`, `POST /login`, `POST /create_project`,
+`POST /join_project`, `GET /get_user_projects_list/<userId>`, and
+`GET /get_project_info/<projectId>`.

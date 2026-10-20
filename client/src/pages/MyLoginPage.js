@@ -8,9 +8,22 @@ const MyLoginPage = () => {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    // In a real app, you would validate with the Flask backend here.
-    // For now, just navigate to the portal.
-    navigate('/portal');
+    fetch('http://127.0.0.1:5000/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    })
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Login failed');
+        return data;
+      })
+      .then((user) => {
+        localStorage.setItem('currentUser', JSON.stringify(user));
+        window.dispatchEvent(new Event('currentUserChanged'));
+        navigate('/portal');
+      })
+      .catch((error) => alert(error.message));
   };
 
   return (

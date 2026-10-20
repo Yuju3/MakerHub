@@ -52,6 +52,15 @@
   text-decoration: none;
 }
 
+.current-user {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--ut-charcoal);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
 /* Layout */
 .main-content {
   flex: 1;

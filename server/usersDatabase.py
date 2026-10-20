@@ -1,40 +1,40 @@
-# Import necessary libraries and modules
-from pymongo import MongoClient
+"""User operations for the local JSON database."""
 
-import projectsDB
 
-'''
-Structure of User entry:
-User = {
-    'username': username,
-    'userId': userId,
-    'password': password,
-    'projects': [project1_ID, project2_ID, ...]
-}
-'''
+def addUser(data, username, user_id, password):
+    if any(user["username"] == username or user["userId"] == user_id for user in data["users"]):
+        return None
+    user = {"username": username, "userId": user_id, "password": password, "projects": []}
+    data["users"].append(user)
+    return public_user(user)
 
-# Function to add a new user
-def addUser(client, username, userId, password):
-    # Add a new user to the database
-    pass
 
-# Helper function to query a user by username and userId
-def __queryUser(client, username, userId):
-    # Query and return a user from the database
-    pass
+def login(data, username, password):
+    user = next(
+        (user for user in data["users"] if user["username"] == username and user["password"] == password),
+        None,
+    )
+    return public_user(user) if user else None
 
-# Function to log in a user
-def login(client, username, userId, password):
-    # Authenticate a user and return login status
-    pass
 
-# Function to add a user to a project
-def joinProject(client, userId, projectId):
-    # Add a user to a specified project
-    pass
+def joinProject(data, user_id, project_id):
+    user = next((user for user in data["users"] if user["userId"] == user_id), None)
+    project = next((project for project in data["projects"] if project["projectId"] == project_id), None)
+    if not user or not project:
+        return None
+    if project_id not in user["projects"]:
+        user["projects"].append(project_id)
+    if user_id not in project["members"]:
+        project["members"].append(user_id)
+    return project
 
-# Function to get the list of projects for a user
-def getUserProjectsList(client, userId):
-    # Get and return the list of projects a user is part of
-    pass
 
+def getUserProjectsList(data, user_id):
+    user = next((user for user in data["users"] if user["userId"] == user_id), None)
+    if not user:
+        return None
+    return [project for project in data["projects"] if project["projectId"] in user["projects"]]
+
+
+def public_user(user):
+    return {key: value for key, value in user.items() if key != "password"}

@@ -1,0 +1,29 @@
+{
+  "users": [
+    {
+      "username": "abc123",
+      "userId": "abc123",
+      "password": "password",
+      "projects": [
+        "123"
+      ]
+    },
+    {
+      "username": "def123",
+      "userId": "def123",
+      "password": "password",
+      "projects": []
+    }
+  ],
+  "projects": [
+    {
+      "projectId": "123",
+      "name": "test",
+      "description": "testing",
+      "ownerId": "abc123",
+      "members": [
+        "abc123"
+      ]
+    }
+  ]
+}
