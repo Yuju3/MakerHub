@@ -95,3 +95,16 @@ python3 app.py
 The initial API supports `POST /add_user`, `POST /login`, `POST /create_project`,
 `POST /join_project`, `GET /get_user_projects_list/<userId>`, and
 `GET /get_project_info/<projectId>`.
+
+## Backend tests
+
+From the repository root:
+
+```bash
+python -m pip install -r server/requirements-dev.txt
+python -m pytest
+```
+
+The tests cover registration, login, project creation, project lookup, and joining
+projects, including invalid inputs and duplicate records. Each test uses a fresh
+temporary JSON database; the application's database is not modified.
