@@ -28,5 +28,17 @@
         "def123"
       ]
     }
+  ],
+  "hardwareSets": [
+    {
+      "hwName": "HWSet1",
+      "capacity": 100,
+      "availability": 100
+    },
+    {
+      "hwName": "HWSet2",
+      "capacity": 50,
+      "availability": 50
+    }
   ]
 }

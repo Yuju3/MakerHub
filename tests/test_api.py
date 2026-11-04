@@ -67,7 +67,7 @@ def test_create_project_links_owner_and_persists_description(client, owner, data
     data = {"projectId": "p1", "name": "Robot", "ownerId": "u1", "description": "Build a robot"}
     response = client.post("/create_project", json=data)
     assert response.status_code == 201
-    assert response.get_json() == {**data, "members": ["u1"]}
+    assert response.get_json() == {**data, "members": ["u1"], "hwUsage": {}}
     snapshot = read_database(database)
     assert snapshot["projects"] == [response.get_json()]
     assert snapshot["users"][0]["projects"] == ["p1"]

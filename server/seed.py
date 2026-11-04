@@ -23,6 +23,11 @@ def main():
             {"projectId": project["projectId"]}, {"$setOnInsert": project}, upsert=True
         )
         print(("added project " if result.upserted_id else "kept project  ") + project["projectId"])
+    for hw_set in data.get("hardwareSets", []):
+        result = db.hardwareSets.update_one(
+            {"hwName": hw_set["hwName"]}, {"$setOnInsert": hw_set}, upsert=True
+        )
+        print(("added hardware set " if result.upserted_id else "kept hardware set  ") + hw_set["hwName"])
 
 
 if __name__ == "__main__":

@@ -1,7 +1,9 @@
 import os
+import re
 
 from flask import Flask, jsonify, request
 
+import hardwareDatabase
 import projectsDatabase
 import usersDatabase
 from db import get_db
@@ -9,6 +11,12 @@ from db import get_db
 
 app = Flask(__name__)
 FRONTEND_ORIGIN = os.environ.get("FRONTEND_ORIGIN", "http://localhost:3000")
+
+# Hardware set names become field names inside each project's hwUsage, so
+# they can't contain "." or "$", which MongoDB treats as special.
+HW_NAME_PATTERN = re.compile(r"^[A-Za-z0-9 _-]{1,50}$")
+
+ERROR_STATUS = {"invalid": 400, "forbidden": 403, "not_found": 404, "conflict": 409}
 
 
 @app.after_request
@@ -31,6 +39,11 @@ def missing_strings(data, fields):
     as an operator and match any password (NoSQL injection).
     """
     return [f for f in fields if not isinstance(data.get(f), str) or not data[f].strip()]
+
+
+def is_positive_int(value):
+    # bool is a subclass of int in Python, so rule out true/false explicitly.
+    return isinstance(value, int) and not isinstance(value, bool) and value > 0
 
 
 def require(data, fields):
@@ -133,6 +146,77 @@ def get_project_post():
     if (error := require(data, ("projectId",))):
         return error
     return get_project(data["projectId"])
+
+
+# ---------------------------------------------------------------- hardware
+
+
+@app.get("/get_all_hw")
+def get_all_hw():
+    """Capacity and availability of every hardware set."""
+    return jsonify(hardwareDatabase.getAllHardwareSets(get_db()))
+
+
+@app.get("/get_all_hw_names")
+def get_all_hw_names():
+    return jsonify(hardwareDatabase.getAllHwNames(get_db()))
+
+
+@app.get("/get_hw_info/<hw_name>")
+def get_hw_info(hw_name):
+    hw_set = hardwareDatabase.queryHardwareSet(get_db(), hw_name)
+    if not hw_set:
+        return jsonify({"error": "hardware set does not exist"}), 404
+    return jsonify(hw_set)
+
+
+@app.post("/get_hw_info")
+def get_hw_info_post():
+    data = body()
+    if (error := require(data, ("hwName",))):
+        return error
+    return get_hw_info(data["hwName"])
+
+
+@app.post("/create_hardware_set")
+def create_hardware_set():
+    data = body()
+    if (error := require(data, ("hwName",))):
+        return error
+    if not HW_NAME_PATTERN.match(data["hwName"]):
+        return jsonify({"error": "hwName may only use letters, numbers, spaces, - and _"}), 400
+    if not is_positive_int(data.get("capacity")):
+        return jsonify({"error": "capacity must be a positive whole number"}), 400
+    hw_set = hardwareDatabase.createHardwareSet(get_db(), data["hwName"], data["capacity"])
+    if not hw_set:
+        return jsonify({"error": "hardware set already exists"}), 409
+    return jsonify(hw_set), 201
+
+
+def hardware_request(operation):
+    """Shared handling for /check_out and /check_in."""
+    data = body()
+    if (error := require(data, ("projectId", "hwName", "userId"))):
+        return error
+    if not is_positive_int(data.get("quantity")):
+        return jsonify({"error": "quantity must be a positive whole number"}), 400
+    try:
+        result = operation(
+            get_db(), data["projectId"], data["hwName"], data["quantity"], data["userId"]
+        )
+    except projectsDatabase.HardwareRequestError as error:
+        return jsonify({"error": error.message}), ERROR_STATUS[error.kind]
+    return jsonify(result)
+
+
+@app.post("/check_out")
+def check_out():
+    return hardware_request(projectsDatabase.checkOutHW)
+
+
+@app.post("/check_in")
+def check_in():
+    return hardware_request(projectsDatabase.checkInHW)
 
 
 if __name__ == "__main__":

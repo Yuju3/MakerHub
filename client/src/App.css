@@ -387,3 +387,23 @@
 .collab-list .collab-empty {
   padding: 1rem 0.25rem;
 }
+/* Result of a hardware check-out or check-in */
+.hw-feedback {
+  margin: 0.75rem 0 0;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--success-green);
+}
+
+.hw-error {
+  margin-top: 1rem;
+}
+
+.hw-error .error-card {
+  margin-bottom: 0;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
