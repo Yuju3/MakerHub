@@ -1,40 +1,50 @@
-"""User operations for the local JSON database."""
+"""User operations backed by the MongoDB `users` collection.
+
+User document:
+{
+    "username": str,
+    "userId": str,
+    "password": str,      # still plain text; encryption is the next step (SR3)
+    "projects": [projectId, ...]
+}
+"""
+
+from pymongo.errors import DuplicateKeyError
+
+# Projections: never send Mongo's internal _id (not JSON serializable)
+# or the password back to the client.
+PUBLIC_USER = {"_id": 0, "password": 0}
+NO_ID = {"_id": 0}
 
 
-def addUser(data, username, user_id, password):
-    if any(user["username"] == username or user["userId"] == user_id for user in data["users"]):
-        return None
+def addUser(db, username, user_id, password):
     user = {"username": username, "userId": user_id, "password": password, "projects": []}
-    data["users"].append(user)
-    return public_user(user)
-
-
-def login(data, username, password):
-    user = next(
-        (user for user in data["users"] if user["username"] == username and user["password"] == password),
-        None,
-    )
-    return public_user(user) if user else None
-
-
-def joinProject(data, user_id, project_id):
-    user = next((user for user in data["users"] if user["userId"] == user_id), None)
-    project = next((project for project in data["projects"] if project["projectId"] == project_id), None)
-    if not user or not project:
+    try:
+        db.users.insert_one(user)
+    except DuplicateKeyError:
+        # The unique indexes on username and userId caught a duplicate.
         return None
-    if project_id not in user["projects"]:
-        user["projects"].append(project_id)
-    if user_id not in project["members"]:
-        project["members"].append(user_id)
-    return project
+    return db.users.find_one({"userId": user_id}, PUBLIC_USER)
 
 
-def getUserProjectsList(data, user_id):
-    user = next((user for user in data["users"] if user["userId"] == user_id), None)
+def login(db, username, password):
+    return db.users.find_one({"username": username, "password": password}, PUBLIC_USER)
+
+
+def joinProject(db, user_id, project_id):
+    if not db.users.find_one({"userId": user_id}, {"_id": 1}):
+        return None
+    if not db.projects.find_one({"projectId": project_id}, {"_id": 1}):
+        return None
+    # $addToSet only adds the value if it isn't already in the array,
+    # so joining twice is harmless and two simultaneous joins can't clash.
+    db.users.update_one({"userId": user_id}, {"$addToSet": {"projects": project_id}})
+    db.projects.update_one({"projectId": project_id}, {"$addToSet": {"members": user_id}})
+    return db.projects.find_one({"projectId": project_id}, NO_ID)
+
+
+def getUserProjectsList(db, user_id):
+    user = db.users.find_one({"userId": user_id}, {"_id": 0, "projects": 1})
     if not user:
         return None
-    return [project for project in data["projects"] if project["projectId"] in user["projects"]]
-
-
-def public_user(user):
-    return {key: value for key, value in user.items() if key != "password"}
+    return list(db.projects.find({"projectId": {"$in": user["projects"]}}, NO_ID))

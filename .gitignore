@@ -1,9 +1,9 @@
 node_modules/
 project.md
-.test-deps/
-.pytest_cache/
+
+# Python
 __pycache__/
 *.pyc
-.venv/
-.venv-dev/
 
+# Secrets
+.env

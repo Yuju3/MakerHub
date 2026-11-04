@@ -1,13 +1,25 @@
-"""Project operations for the local JSON database."""
+"""Project operations backed by the MongoDB `projects` collection.
+
+Project document:
+{
+    "projectId": str,
+    "name": str,
+    "description": str,
+    "ownerId": userId,
+    "members": [userId, ...]
+}
+"""
+
+from pymongo.errors import DuplicateKeyError
+
+NO_ID = {"_id": 0}
 
 
-def queryProject(data, project_id):
-    return next((project for project in data["projects"] if project["projectId"] == project_id), None)
+def queryProject(db, project_id):
+    return db.projects.find_one({"projectId": project_id}, NO_ID)
 
 
-def createProject(data, project_name, project_id, description, owner_id):
-    if queryProject(data, project_id):
-        return None
+def createProject(db, project_name, project_id, description, owner_id):
     project = {
         "projectId": project_id,
         "name": project_name,
@@ -15,7 +27,9 @@ def createProject(data, project_name, project_id, description, owner_id):
         "ownerId": owner_id,
         "members": [owner_id],
     }
-    data["projects"].append(project)
-    owner = next(user for user in data["users"] if user["userId"] == owner_id)
-    owner["projects"].append(project_id)
-    return project
+    try:
+        db.projects.insert_one(project)
+    except DuplicateKeyError:
+        return None
+    db.users.update_one({"userId": owner_id}, {"$addToSet": {"projects": project_id}})
+    return queryProject(db, project_id)

@@ -12,7 +12,9 @@
       "username": "def123",
       "userId": "def123",
       "password": "password",
-      "projects": []
+      "projects": [
+        "123"
+      ]
     }
   ],
   "projects": [
@@ -22,7 +24,8 @@
       "description": "testing",
       "ownerId": "abc123",
       "members": [
-        "abc123"
+        "abc123",
+        "def123"
       ]
     }
   ]
