@@ -63,8 +63,10 @@ def add_user():
 @app.post("/login")
 def login():
     data = body()
-    if (error := require(data, ("username", "password"))):
-        return error
+    # Missing or non-text credentials get the same answer as wrong ones,
+    # so the response never hints at which part was wrong.
+    if missing_strings(data, ("username", "password")):
+        return jsonify({"error": "invalid username or password"}), 401
     user = usersDatabase.login(get_db(), data["username"], data["password"])
     if not user:
         return jsonify({"error": "invalid username or password"}), 401

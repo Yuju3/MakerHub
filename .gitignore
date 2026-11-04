@@ -4,6 +4,12 @@ project.md
 # Python
 __pycache__/
 *.pyc
+.venv/
+.venv-dev/
+
+# Test tooling
+.test-deps/
+.pytest_cache/
 
 # Secrets
 .env

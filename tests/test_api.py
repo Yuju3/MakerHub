@@ -1,25 +1,27 @@
 """Regression tests for registration, login, and project collaboration."""
 
-import json
-
 import pytest
 
 
-def read_database(path):
-    return json.loads(path.read_text(encoding="utf-8"))
+def read_database(database):
+    """Snapshot the users and projects collections as plain lists."""
+    return {
+        "users": list(database.users.find({}, {"_id": 0})),
+        "projects": list(database.projects.find({}, {"_id": 0})),
+    }
 
 
-def test_registration_persists_user_without_exposing_password(client, database_file):
+def test_registration_persists_user_without_exposing_password(client, database):
     user = {"username": "alice", "userId": "u1", "password": "test-password"}
     response = client.post("/add_user", json=user)
     assert response.status_code == 201
     assert response.get_json() == {"username": "alice", "userId": "u1", "projects": []}
-    assert read_database(database_file)["users"] == [{**user, "projects": []}]
+    assert read_database(database)["users"] == [{**user, "projects": []}]
 
 
 @pytest.mark.parametrize("field", ["username", "userId", "password"])
 @pytest.mark.parametrize("value", [None, ""])
-def test_registration_requires_fields(client, database_file, field, value):
+def test_registration_requires_fields(client, database, field, value):
     data = {"username": "alice", "userId": "u1", "password": "test-password"}
     if value is None:
         del data[field]
@@ -28,17 +30,17 @@ def test_registration_requires_fields(client, database_file, field, value):
     response = client.post("/add_user", json=data)
     assert response.status_code == 400
     assert "required" in response.get_json()["error"]
-    assert read_database(database_file)["users"] == []
+    assert read_database(database)["users"] == []
 
 
 @pytest.mark.parametrize("field", ["username", "userId"])
-def test_registration_rejects_duplicate_identity(client, owner, database_file, field):
-    before = read_database(database_file)
+def test_registration_rejects_duplicate_identity(client, owner, database, field):
+    before = read_database(database)
     data = {"username": "bob", "userId": "u2", "password": "other-password"}
     data[field] = owner[field]
     response = client.post("/add_user", json=data)
     assert response.status_code == 409
-    assert read_database(database_file) == before
+    assert read_database(database) == before
 
 
 def test_login_returns_public_user(client, owner):
@@ -53,60 +55,60 @@ def test_login_returns_public_user(client, owner):
     {"username": "alice"},
     {},
 ])
-def test_login_rejects_invalid_credentials(client, owner, database_file, credentials):
-    before = read_database(database_file)
+def test_login_rejects_invalid_credentials(client, owner, database, credentials):
+    before = read_database(database)
     response = client.post("/login", json=credentials)
     assert response.status_code == 401
     assert response.get_json() == {"error": "invalid username or password"}
-    assert read_database(database_file) == before
+    assert read_database(database) == before
 
 
-def test_create_project_links_owner_and_persists_description(client, owner, database_file):
+def test_create_project_links_owner_and_persists_description(client, owner, database):
     data = {"projectId": "p1", "name": "Robot", "ownerId": "u1", "description": "Build a robot"}
     response = client.post("/create_project", json=data)
     assert response.status_code == 201
     assert response.get_json() == {**data, "members": ["u1"]}
-    database = read_database(database_file)
-    assert database["projects"] == [response.get_json()]
-    assert database["users"][0]["projects"] == ["p1"]
+    snapshot = read_database(database)
+    assert snapshot["projects"] == [response.get_json()]
+    assert snapshot["users"][0]["projects"] == ["p1"]
 
 
 @pytest.mark.parametrize("field", ["projectId", "name", "ownerId"])
 @pytest.mark.parametrize("value", [None, ""])
-def test_create_project_requires_fields(client, owner, database_file, field, value):
+def test_create_project_requires_fields(client, owner, database, field, value):
     data = {"projectId": "p1", "name": "Robot", "ownerId": "u1"}
     if value is None:
         del data[field]
     else:
         data[field] = value
-    before = read_database(database_file)
+    before = read_database(database)
     assert client.post("/create_project", json=data).status_code == 400
-    assert read_database(database_file) == before
+    assert read_database(database) == before
 
 
-def test_create_project_rejects_unknown_owner(client, database_file):
+def test_create_project_rejects_unknown_owner(client, database):
     response = client.post("/create_project", json={"projectId": "p1", "name": "Robot", "ownerId": "missing"})
     assert response.status_code == 404
-    assert read_database(database_file)["projects"] == []
+    assert read_database(database)["projects"] == []
 
 
-def test_duplicate_project_does_not_overwrite_original(client, project, database_file):
-    before = read_database(database_file)
+def test_duplicate_project_does_not_overwrite_original(client, project, database):
+    before = read_database(database)
     response = client.post("/create_project", json={**project, "name": "Replacement"})
     assert response.status_code == 409
-    assert read_database(database_file) == before
+    assert read_database(database) == before
 
 
-def test_join_project_updates_both_sides_without_duplicates(client, project, database_file):
+def test_join_project_updates_both_sides_without_duplicates(client, project, database):
     assert client.post("/add_user", json={"username": "bob", "userId": "u2", "password": "secret"}).status_code == 201
     for _ in range(2):
         response = client.post("/join_project", json={"userId": "u2", "projectId": "p1"})
         assert response.status_code == 200
         assert response.get_json()["members"] == ["u1", "u2"]
-    database = read_database(database_file)
-    assert database["users"][1]["projects"] == ["p1"]
-    assert database["projects"][0]["members"] == ["u1", "u2"]
-    assert client.get("/get_user_projects_list/u2").get_json() == database["projects"]
+    snapshot = read_database(database)
+    assert snapshot["users"][1]["projects"] == ["p1"]
+    assert snapshot["projects"][0]["members"] == ["u1", "u2"]
+    assert client.get("/get_user_projects_list/u2").get_json() == snapshot["projects"]
 
 
 @pytest.mark.parametrize("data,status", [
@@ -115,10 +117,10 @@ def test_join_project_updates_both_sides_without_duplicates(client, project, dat
     ({"projectId": "p1"}, 400),
     ({"userId": "u1"}, 400),
 ])
-def test_invalid_join_does_not_change_database(client, project, database_file, data, status):
-    before = read_database(database_file)
+def test_invalid_join_does_not_change_database(client, project, database, data, status):
+    before = read_database(database)
     assert client.post("/join_project", json=data).status_code == status
-    assert read_database(database_file) == before
+    assert read_database(database) == before
 
 
 @pytest.mark.parametrize("method", ["get", "post"])
@@ -147,3 +149,14 @@ def test_new_user_has_no_projects(client, owner):
     response = client.get("/get_user_projects_list/u1")
     assert response.status_code == 200
     assert response.get_json() == []
+
+
+@pytest.mark.parametrize("credentials", [
+    {"username": "alice", "password": {"$ne": ""}},
+    {"username": {"$ne": ""}, "password": {"$ne": ""}},
+])
+def test_login_rejects_query_operators(client, owner, credentials):
+    """A MongoDB operator in place of a password must not match any user."""
+    response = client.post("/login", json=credentials)
+    assert response.status_code == 401
+    assert response.get_json() == {"error": "invalid username or password"}

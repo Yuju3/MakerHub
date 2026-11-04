@@ -1,22 +1,28 @@
-"""Give every API test its own database instead of changing application data."""
+"""Give every API test its own empty database instead of touching Atlas.
 
-import json
+mongomock is an in-memory stand-in for MongoDB that understands the same
+pymongo calls, so the backend code runs unchanged and nothing is written
+to the team's real database.
+"""
 
+import mongomock
 import pytest
 
 import app as backend
+import db
 
 
 @pytest.fixture
-def database_file(tmp_path, monkeypatch):
-    path = tmp_path / "database.json"
-    path.write_text(json.dumps({"users": [], "projects": []}), encoding="utf-8")
-    monkeypatch.setattr(backend, "DATABASE_FILE", path)
-    return path
+def database(monkeypatch):
+    test_db = mongomock.MongoClient()["makerhub_test"]
+    db.ensure_indexes(test_db)
+    # get_db() returns the cached database, so it never connects to Atlas.
+    monkeypatch.setattr(db, "_db", test_db)
+    return test_db
 
 
 @pytest.fixture
-def client(database_file, monkeypatch):
+def client(database, monkeypatch):
     monkeypatch.setitem(backend.app.config, "TESTING", True)
     with backend.app.test_client() as client:
         yield client
