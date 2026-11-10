@@ -12,8 +12,23 @@ from db import get_db
 app = Flask(__name__)
 
 # Accept a comma-separated list so both localhost and the Render URL work.
-_raw_origins = os.environ.get("FRONTEND_ORIGIN", "http://localhost:3000")
+_raw_origins = os.environ.get("FRONTEND_ORIGIN", "http://localhost:3000,*")
 ALLOWED_ORIGINS = {o.strip() for o in _raw_origins.split(",") if o.strip()}
+
+
+def is_allowed_origin(origin):
+    if not origin:
+        return False
+    if "*" in ALLOWED_ORIGINS:
+        return True
+    if origin in ALLOWED_ORIGINS:
+        return True
+    if origin.startswith("http://localhost:") or origin.startswith("http://127.0.0.1:"):
+        return True
+    if origin.endswith(".onrender.com"):
+        return True
+    return False
+
 
 # Hardware set names become field names inside each project's hwUsage, so
 # they can't contain "." or "$", which MongoDB treats as special.
@@ -25,8 +40,10 @@ ERROR_STATUS = {"invalid": 400, "forbidden": 403, "not_found": 404, "conflict": 
 @app.after_request
 def add_cors_headers(response):
     origin = request.headers.get("Origin", "")
-    if origin in ALLOWED_ORIGINS:
+    if is_allowed_origin(origin):
         response.headers["Access-Control-Allow-Origin"] = origin
+    elif "*" in ALLOWED_ORIGINS:
+        response.headers["Access-Control-Allow-Origin"] = "*"
     response.headers["Access-Control-Allow-Headers"] = "Content-Type"
     response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
     return response
