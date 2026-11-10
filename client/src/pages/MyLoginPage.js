@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import ErrorCard from '../components/ErrorCard';
+import { API_BASE_URL } from '../api';
 
 const MyLoginPage = () => {
   const [username, setUsername] = useState('');
@@ -13,7 +14,7 @@ const MyLoginPage = () => {
     e.preventDefault();
     setError(null);
     setLoading(true);
-    fetch('http://127.0.0.1:5000/login', {
+    fetch(`${API_BASE_URL}/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password })

@@ -1,5 +1,6 @@
 """Regression tests for registration, login, and project collaboration."""
 
+import bcrypt
 import pytest
 
 
@@ -16,7 +17,14 @@ def test_registration_persists_user_without_exposing_password(client, database):
     response = client.post("/add_user", json=user)
     assert response.status_code == 201
     assert response.get_json() == {"username": "alice", "userId": "u1", "projects": []}
-    assert read_database(database)["users"] == [{**user, "projects": []}]
+    stored = read_database(database)["users"]
+    assert len(stored) == 1
+    assert stored[0]["username"] == "alice"
+    assert stored[0]["userId"] == "u1"
+    assert stored[0]["projects"] == []
+    # Password must be stored as a bcrypt hash, not plain text.
+    assert stored[0]["password"] != "test-password"
+    assert bcrypt.checkpw(b"test-password", stored[0]["password"].encode("utf-8"))
 
 
 @pytest.mark.parametrize("field", ["username", "userId", "password"])

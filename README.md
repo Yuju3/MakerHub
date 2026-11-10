@@ -15,8 +15,8 @@ The stack is a **React** frontend, a **Flask** REST API, and a **MongoDB Atlas**
 | Hardware sets stored in the database, with check-out and check-in API | Done |
 | Backend API tests (pytest) | Done (85 tests, run against an in-memory database) |
 | Check-in / check-out screen using real data | Done |
-| Encrypted user IDs and passwords | Not started (passwords are currently plain text) |
-| Cloud deployment | Not started |
+| Encrypted user IDs and passwords | Done (passwords hashed using bcrypt) |
+| Cloud deployment | Configured for Render via Blueprint (`render.yaml`) |
 | Forgot password | Placeholder only |
 
 ## Repository layout
@@ -106,6 +106,23 @@ Only needed if you want your own cluster instead of the team's.
 2. Under **Security → Database Access**, add a database user with the **Read and write to any database** role. Use a password with only letters and numbers, so it needs no encoding inside the connection string.
 3. Under **Security → Network Access**, add `0.0.0.0/0` (allow access from anywhere). The app's eventual cloud host will not have a fixed IP address.
 4. On the cluster, click **Connect → Drivers → Python** and copy the connection string into `server/.env`.
+
+## Cloud deployment (Render)
+
+MakerHub includes a Render Blueprint specification ([`render.yaml`](render.yaml)) defining two services:
+- **`makerhub-api`** — Python Flask web service using Gunicorn
+- **`makerhub`** — React static site built from `client/`
+
+### Steps to Deploy:
+
+1. Push your repository to GitHub.
+2. Log in to [Render](https://render.com) and click **New +** → **Blueprint**.
+3. Select your MakerHub repository. Render will automatically detect `render.yaml`.
+4. Enter your environment variables when prompted:
+   - `MONGODB_URI`: Your MongoDB Atlas connection string.
+   - `MONGODB_DB`: Database name (defaults to `makerhub`).
+   - `FRONTEND_ORIGIN`: Your deployed frontend URL (e.g. `https://makerhub.onrender.com`).
+5. Click **Apply**. Render builds and deploys both the backend and frontend.
 
 ## Running the tests
 

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Project from '../components/Project';
 import Checkout from '../components/Checkout';
 import JoinProject from '../components/JoinProject';
+import { API_BASE_URL } from '../api';
 
 const MyUserPortal = () => {
   const [activeProject, setActiveProject] = useState(null);
@@ -12,7 +13,7 @@ const MyUserPortal = () => {
 
   useEffect(() => {
     if (!currentUser?.userId) return;
-    fetch(`http://127.0.0.1:5000/get_user_projects_list/${currentUser.userId}`)
+    fetch(`${API_BASE_URL}/get_user_projects_list/${currentUser.userId}`)
       .then(response => response.json())
       .then(setProjects)
       .catch(() => alert('Could not load your projects.'));
@@ -26,7 +27,7 @@ const MyUserPortal = () => {
     }
 
     try {
-      const response = await fetch('http://127.0.0.1:5000/create_project', {
+      const response = await fetch(`${API_BASE_URL}/create_project`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...newProject, ownerId: currentUser.userId })

@@ -4,11 +4,12 @@ User document:
 {
     "username": str,
     "userId": str,
-    "password": str,      # still plain text; encryption is the next step (SR3)
+    "password": str,      # bcrypt hash
     "projects": [projectId, ...]
 }
 """
 
+import bcrypt
 from pymongo.errors import DuplicateKeyError
 
 # Projections: never send Mongo's internal _id (not JSON serializable)
@@ -17,8 +18,18 @@ PUBLIC_USER = {"_id": 0, "password": 0}
 NO_ID = {"_id": 0}
 
 
+def _hash_password(password):
+    """Return a bcrypt hash of the plain-text password."""
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+
+def _check_password(password, hashed):
+    """Return True if the plain-text password matches the bcrypt hash."""
+    return bcrypt.checkpw(password.encode("utf-8"), hashed.encode("utf-8"))
+
+
 def addUser(db, username, user_id, password):
-    user = {"username": username, "userId": user_id, "password": password, "projects": []}
+    user = {"username": username, "userId": user_id, "password": _hash_password(password), "projects": []}
     try:
         db.users.insert_one(user)
     except DuplicateKeyError:
@@ -28,7 +39,14 @@ def addUser(db, username, user_id, password):
 
 
 def login(db, username, password):
-    return db.users.find_one({"username": username, "password": password}, PUBLIC_USER)
+    # Fetch the user by username only, then verify the password against the hash.
+    user = db.users.find_one({"username": username})
+    if not user:
+        return None
+    if not _check_password(password, user["password"]):
+        return None
+    # Strip _id and password before returning.
+    return {k: v for k, v in user.items() if k not in ("_id", "password")}
 
 
 def joinProject(db, user_id, project_id):

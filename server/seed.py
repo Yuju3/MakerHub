@@ -2,21 +2,29 @@
 
 Run from the server folder:  python3 seed.py
 Safe to run more than once: existing records are left alone.
+Passwords in database.json are hashed before insertion.
 """
 
 import json
 from pathlib import Path
+
+import bcrypt
 
 from db import get_db
 
 SEED_FILE = Path(__file__).with_name("database.json")
 
 
+def _hash(password):
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+
 def main():
     db = get_db()
     data = json.loads(SEED_FILE.read_text())
     for user in data.get("users", []):
-        result = db.users.update_one({"userId": user["userId"]}, {"$setOnInsert": user}, upsert=True)
+        user_doc = {**user, "password": _hash(user["password"])}
+        result = db.users.update_one({"userId": user["userId"]}, {"$setOnInsert": user_doc}, upsert=True)
         print(("added user " if result.upserted_id else "kept user  ") + user["userId"])
     for project in data.get("projects", []):
         result = db.projects.update_one(
